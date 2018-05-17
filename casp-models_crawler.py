@@ -30,6 +30,20 @@ def get_data(target_name, request_url=url, request_headers=headers):
     return compressed_models
 
 
+def download_data(compressed_models):
+    """Downloads"""
+    for models_url in compressed_models:
+        print '> ', models_url
+        print '>> Downloading...'
+        r = requests.get(models_url)
+        print len(r.content), 'bytes'
+        file_name = models_url.rsplit('/')[-1]
+        with open(file_name, 'wb') as f:
+            f.write(r.content)
+            print '>>', file_name, 'saved'
+        print '>> Done.'
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser()
@@ -40,14 +54,6 @@ if __name__ == "__main__":
     compressed_models = get_data(args.target_name)
     if len(compressed_models):
         # Get the models data:
-        print 'Compressed models found for %s target:' % args.target_name
-        for models_url in compressed_models:
-            print '> ', models_url
-            print '>> Downloading...'
-            r = requests.get(models_url)
-            print len(r.content), 'bytes'
-            with open('%s.tar.gz' % args.target_name, 'wb') as f:
-                f.write(r.content)
-            print '>> Done.'
+        download_data(compressed_models)
     else:
         print 'Sorry, no models found'
