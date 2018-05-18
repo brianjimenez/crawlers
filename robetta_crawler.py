@@ -14,13 +14,13 @@ headers = {
 
 def get_data(page_number, num_per_page=100, request_url=url, request_headers=headers):
     """Gets this server queue data from the url"""
-    r = requests.get(url % (str(page_number), str(num_per_page)), headers=headers)
+    r = requests.get(request_url % (str(page_number), str(num_per_page)), headers=headers)
 
     if r.status_code == 200:
         html = r.text
         soup = BeautifulSoup(html, 'lxml')
         # Get the information for jobs in queue:
-        queue_table = soup.find("form",{"name":"myform"})
+        queue_table = soup.find("form", {"name":"myform"})
         rows = queue_table.find_all("tr")
         server_content = []
         for row in rows:
@@ -45,6 +45,25 @@ def get_data(page_number, num_per_page=100, request_url=url, request_headers=hea
         return None
 
 
+def get_sequence_data(job_id, request_url=url_job_results, request_headers=headers):
+    """Gets the sequence data of a given Robetta job_id"""
+    r = requests.get(request_url % str(job_id), headers=headers)
+
+    sequence = None
+    if r.status_code == 200:
+        html = r.text
+        soup = BeautifulSoup(html, 'lxml')
+        # Get the information for jobs in queue:
+        pres = soup.find_all("pre", {"class":"sequence"})
+        if len(pres) > 2:
+            try:
+                sequence = ''.join([str(pre) for pre in pres[1].contents])
+                sequence = sequence.replace('<b>','').replace('</b>','')
+            except:
+                pass
+    return sequence
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser()
@@ -56,6 +75,12 @@ if __name__ == "__main__":
     jobs_data = []
     for i in range(1, args.num_pages + 1):
         job_data = get_data(i, args.items_per_page)
+        for job in job_data:
+            job_id = job['job_id']
+            print ' > sequence for job %s' % job_id
+            sequence = get_sequence_data(job_id)
+            job['sequence'] = sequence
+            print sequence
         print 'Page %d...OK' % (i)
         jobs_data += job_data
 
